@@ -175,7 +175,7 @@ async function refreshLeaderboard() {
   if (!db || !joinedGameId || !playerRound || (!playerRound.allowed && playerRound.status !== "ended")) return;
   const { data, error } = await db.from("players").select("nickname,score").eq("game_id", joinedGameId).order("score", { ascending: false }).limit(10);
   if (error) return;
-  $("leaderboardList").innerHTML = data && data.length ? data.map((p, i) => '<li><span>' + ["🥇","🥈","🥉"][i].toString().replace("undefined","") + " " + escapeHTML(p.nickname) + "</span><b>" + Number(p.score || 0).toLocaleString() + " pts</b></li>").join("") : "<li>Waiting for players…</li>";
+  $("leaderboardList").innerHTML = data && data.length ? data.map((p, i) => '<li><span>' + (["🥇","🥈","🥉"][i] || "#" + (i + 1)) + " " + escapeHTML(p.nickname) + "</span><b>" + Number(p.score || 0).toLocaleString() + " pts</b></li>").join("") : "<li>Waiting for players…</li>";
 }
 async function leaveGame() {
   if (playerChannel) await db.removeChannel(playerChannel);
@@ -310,7 +310,7 @@ async function saveQuestion(event) {
   if (!error) await refreshHostGames(activeGame.id);
 }
 async function addSampleQuestions() {
-  if (!activeGame || !questions.length === false) {} // No-op; keep existing questions intact.
+  if (!activeGame || activeGame.status !== "draft") return;
   const samples = [
     ["What does SK stand for?", ["Sangguniang Kabataan","Samahan ng Kapitbahay","Senior Kabataan","Sektor ng Kalakalan"], 0],
     ["Which city is Barangay Vasra in?", ["Caloocan","Quezon City","Manila","Pasig"], 1],
