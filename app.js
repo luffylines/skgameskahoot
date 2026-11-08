@@ -176,6 +176,11 @@ async function refreshLeaderboard() {
   const { data, error } = await db.from("players").select("nickname,score").eq("game_id", joinedGameId).order("score", { ascending: false }).limit(10);
   if (error) return;
   $("leaderboardList").innerHTML = data && data.length ? data.map((p, i) => '<li><span>' + (["🥇","🥈","🥉"][i] || "#" + (i + 1)) + " " + escapeHTML(p.nickname) + "</span><b>" + Number(p.score || 0).toLocaleString() + " pts</b></li>").join("") : "<li>Waiting for players…</li>";
+  const podium = $("podium");
+  if (playerRound.status === "ended" && data && data.length) {
+    podium.hidden = false;
+    podium.innerHTML = '<h4>🏆 THE PODIUM</h4><div class="podium-places">' + [1, 0, 2].map((i) => data[i] ? '<div class="podium-place p' + (i + 1) + '"><span>' + ["🥇","🥈","🥉"][i] + '</span><strong>' + escapeHTML(data[i].nickname) + '</strong><small>' + Number(data[i].score).toLocaleString() + ' pts</small></div>' : "").join("") + '</div>';
+  } else podium.hidden = true;
 }
 async function leaveGame() {
   if (playerChannel) await db.removeChannel(playerChannel);
@@ -373,6 +378,17 @@ async function synchronizeLive() {
 }
 async function boot() {
   $("year").textContent = new Date().getFullYear();
+  const initialTheme = localStorage.getItem("skvasra_live_theme") || "light";
+  document.documentElement.setAttribute("data-theme", initialTheme);
+  $("themeToggle").textContent = initialTheme === "dark" ? "☀" : "☾";
+  $("themeToggle").setAttribute("aria-pressed", String(initialTheme === "dark"));
+  $("themeToggle").addEventListener("click", () => {
+    const dark = document.documentElement.getAttribute("data-theme") !== "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    $("themeToggle").textContent = dark ? "☀" : "☾";
+    $("themeToggle").setAttribute("aria-pressed", String(dark));
+    localStorage.setItem("skvasra_live_theme", dark ? "dark" : "light");
+  });
   $("hostOpen").addEventListener("click", async () => {
     if (isHost) $("hostSection").scrollIntoView({ behavior: "smooth" });
     else $("hostDialog").showModal();
