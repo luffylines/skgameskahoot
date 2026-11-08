@@ -14,5 +14,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/officer",
+      "destination": "/index.html"
+    }
   ]
 }
