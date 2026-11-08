@@ -22,7 +22,7 @@
         <a href="#how-it-works" class="nav-link">How it works</a>
         <a class="nav-link community-link" href="https://skvasra.app" target="_blank" rel="noopener noreferrer">Community Portal ↗</a>
         <button id="themeToggle" type="button" class="btn btn-outline theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">☾</button>
-        <button id="hostOpen" type="button" class="btn btn-outline">SK Officer Login <span aria-hidden="true">↗</span></button>
+        <button id="hostOpen" type="button" class="btn btn-outline" hidden>SK Officer Login <span aria-hidden="true">↗</span></button>
       </div>
     </div>
   </header>
@@ -35,7 +35,7 @@
         <div class="pill-line"><span class="spark">✦</span> Interactive Community Experience</div>
         <h1>PLAY. LEARN.<br><em>WIN TOGETHER.</em></h1>
         <p>Real-time trivia, friendly competition, and big community energy — all while watching the official SK Vasra Facebook Live.</p>
-        <div class="join-card">
+        <div class="join-card" id="joinCard" hidden>
           <div class="join-heading"><span class="number-chip">01</span><div><strong>Join the live game</strong><small>Enter the PIN shared by your SK host</small></div></div>
           <form id="joinForm" class="join-form">
             <label><span>GAME PIN</span><input id="pinInput" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="000 000" required autocomplete="off" aria-label="Six-digit game PIN"></label>
@@ -45,6 +45,7 @@
           <p class="form-error" id="joinError" role="alert"></p>
           <div class="join-note"><span>●</span> No player account required • Free to join</div>
         </div>
+        <div class="hero-small" id="offlineJoinNote">The game entrance appears during an official Facebook Live event.</div>
         <div class="hero-small"> <span class="avatars"><b>★</b><b>✦</b><b>✓</b></span> Made for Kabataang Vasra, powered by community spirit.</div>
       </div>
       <div class="live-stage">
