@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111c70">
+  <meta name="description" content="SKVASRA Live Games — play interactive community trivia during official SK Barangay Vasra Facebook Live events.">
+  <title>SKVASRA Live Games | Arangkada, Kabataang VASRA!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell topbar">
+      <a class="brand" href="/" aria-label="SKVASRA Live Games home">
+        <img class="seal" src="https://raw.githubusercontent.com/luffylines/vasra/main/dist/sk%20logo.jpg" alt="SK Vasra seal">
+        <span><strong>SK<span class="brand-accent">VASRA</span></strong><small>LIVE GAMES</small></span>
+      </a>
+      <div class="topbar-links">
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a class="nav-link community-link" href="https://skvasra.app" target="_blank" rel="noopener noreferrer">Community Portal ↗</a>
+        <button id="hostOpen" type="button" class="btn btn-outline">SK Officer Login <span aria-hidden="true">↗</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="setupNotice" class="setup-notice shell" hidden></div>
+    <section class="hero shell">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> SANGGUNIANG KABATAAN • BARANGAY VASRA</div>
+        <div class="pill-line"><span class="spark">✦</span> Interactive Community Experience</div>
+        <h1>PLAY. LEARN.<br><em>WIN TOGETHER.</em></h1>
+        <p>Real-time trivia, friendly competition, and big community energy — all while watching the official SK Vasra Facebook Live.</p>
+        <div class="join-card">
+          <div class="join-heading"><span class="number-chip">01</span><div><strong>Join the live game</strong><small>Enter the PIN shared by your SK host</small></div></div>
+          <form id="joinForm" class="join-form">
+            <label><span>GAME PIN</span><input id="pinInput" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="000 000" required autocomplete="off" aria-label="Six-digit game PIN"></label>
+            <label><span>YOUR NICKNAME</span><input id="nicknameInput" maxlength="28" minlength="2" placeholder="e.g. VasraChampion" required autocomplete="nickname"></label>
+            <button class="btn btn-primary" type="submit">Join Game <span aria-hidden="true">→</span></button>
+          </form>
+          <p class="form-error" id="joinError" role="alert"></p>
+          <div class="join-note"><span>●</span> No player account required • Free to join</div>
+        </div>
+        <div class="hero-small"> <span class="avatars"><b>★</b><b>✦</b><b>✓</b></span> Made for Kabataang Vasra, powered by community spirit.</div>
+      </div>
+      <div class="live-stage">
+        <div class="stage-top"><span class="stage-kicker">THE COMMUNITY STAGE</span><span id="liveBadge" class="live-badge offline"><span class="status-dot"></span> OFF AIR</span></div>
+        <div class="video-frame" id="videoFrame">
+          <div class="video-art">
+            <span class="orb one"></span><span class="orb two"></span>
+            <div class="video-art-text"><div class="video-play">▶</div><b>SK VASRA</b><strong>LIVE TRIVIA</strong><small>THE GAME STARTS WHEN WE GO LIVE</small></div>
+            <div class="video-lines"></div>
+          </div>
+        </div>
+        <div class="stage-footer">
+          <div class="stage-info"><span class="fb-icon">f</span><div><strong id="liveTitle">Waiting for the next live event</strong><small id="liveDescription">Follow the official SK Vasra Facebook Page for announcements.</small></div></div>
+          <a id="facebookLink" class="icon-arrow" href="https://www.facebook.com/skbrgyvasra" target="_blank" rel="noopener noreferrer" aria-label="Open Facebook page">↗</a>
+        </div>
+        <div class="stage-stats"><span><i class="mini-dot"></i> <b id="stageStatus">Live-event access</b></span><span id="stagePin">Community-first gaming</span></div>
+      </div>
+    </section>
+
+    <section class="shell game-section" id="gameSection" hidden aria-live="polite">
+      <div class="section-caption"><span class="section-dot"></span> NOW PLAYING</div>
+      <div class="game-layout">
+        <div class="game-card">
+          <div class="game-head"><span id="gameModeBadge" class="tag">LIVE GAME</span><span id="gameRound">Waiting for SK host</span></div>
+          <h2 id="gameTitle">You're in!</h2>
+          <p id="gameSubtitle">Your game will appear here.</p>
+          <div class="countdown"><span>TIME REMAINING</span><strong id="countdown">—</strong></div>
+          <div class="answers-grid" id="answersGrid"></div>
+          <p id="answerFeedback" class="feedback" role="status"></p>
+          <button id="leaveGame" type="button" class="btn btn-quiet">Leave game</button>
+        </div>
+        <aside class="leaderboard"><div class="leaderboard-top"><span>🏆</span><div><strong>Live leaderboard</strong><small>Top community players</small></div></div><ol id="leaderboardList" class="leaderboard-list"><li>Players will show here.</li></ol></aside>
+      </div>
+    </section>
+
+    <section class="shell host-section" id="hostSection" hidden>
+      <div class="section-head split">
+        <div><div class="section-caption"><span class="section-dot"></span> OFFICER WORKSPACE</div><h2>SK Game Studio</h2><p>Create quizzes, control rounds, and watch your community play.</p></div>
+        <div class="host-tools"><button id="syncLive" class="btn btn-outline" type="button">↻ Check Facebook Live</button><button id="signOut" class="btn btn-quiet" type="button">Log out</button></div>
+      </div>
+      <p id="hostMessage" class="host-message" role="status"></p>
+      <div class="host-layout">
+        <aside class="panel host-list-panel"><div class="panel-title"><strong>Your quiz events</strong><span>SK ACCOUNT</span></div><div id="hostGameList" class="host-game-list"></div><button id="newGame" type="button" class="btn btn-primary full">+ Create new game</button></aside>
+        <div class="panel editor-panel" id="editorPanel"><div class="editor-empty"><span>✦</span><h3>Ready to host something fun?</h3><p>Create a live trivia event to start preparing questions for Kabataang Vasra.</p></div></div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="shell how-section">
+      <div class="section-head centered"><div class="section-caption"><span class="section-dot"></span> HOW IT WORKS</div><h2>Everyone's invited. <em>Game on.</em></h2><p>Three simple steps to join the fun when SK Vasra goes live.</p></div>
+      <div class="how-grid">
+        <article class="how-card"><span class="step-number">01 / WATCH</span><div class="how-icon">▶</div><h3>Tune in live</h3><p>Watch the official Facebook Live broadcast right here when the SK team is on air.</p></article>
+        <article class="how-card"><span class="step-number">02 / JOIN</span><div class="how-icon">⌗</div><h3>Enter your Game PIN</h3><p>Type the six-digit PIN and your nickname. No separate player registration needed.</p></article>
+        <article class="how-card"><span class="step-number">03 / PLAY</span><div class="how-icon">★</div><h3>Climb the leaderboard</h3><p>Answer quickly and correctly, earn points, and make it to the community podium.</p></article>
+      </div>
+    </section>
+    <section class="shell promo">
+      <div><span>FOR THE YOUTH • BY THE YOUTH</span><h2>Arangkada, Kabataang <em>VASRA!</em></h2><p>Stay connected. Keep learning. Have fun together.</p></div>
+      <a class="btn btn-white" href="https://www.facebook.com/skbrgyvasra" target="_blank" rel="noopener noreferrer">Visit our Facebook Page ↗</a>
+      <span class="promo-decor">✦</span>
+    </section>
+  </main>
+  <footer class="footer"><div class="shell footer-inside"><span>© <span id="year"></span> SK Barangay Vasra · Live Games</span><span>Made for the community, with <b>♥</b> in Quezon City</span></div></footer>
+
+  <dialog id="hostDialog" class="login-dialog">
+    <form method="dialog"><button class="dialog-close" aria-label="Close login dialog">×</button></form>
+    <div class="dialog-mark">✦</div><div class="section-caption">RESTRICTED OFFICER ACCESS</div><h2>Welcome back, SK!</h2><p>Sign in with your authorized SK Games account to manage official quiz events.</p>
+    <form id="loginForm" class="login-form"><label>EMAIL ADDRESS<input type="email" id="hostEmail" required placeholder="officer@example.com" autocomplete="username"></label><label>PASSWORD<input type="password" id="hostPassword" required placeholder="Your account password" autocomplete="current-password"></label><p class="form-error" id="loginError" role="alert"></p><button class="btn btn-primary full" type="submit">Sign in as SK Officer →</button></form>
+    <div class="dialog-foot">Officer access is approved by the system administrator. Public players only need a Game PIN.</div>
+  </dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
