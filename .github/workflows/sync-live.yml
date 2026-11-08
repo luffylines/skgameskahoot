@@ -19,8 +19,8 @@ jobs:
           CRON_SECRET: ${{ secrets.SKGAMES_CRON_SECRET }}
         run: |
           if [ -z "$DEPLOYMENT_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "Set SKGAMES_DEPLOYMENT_URL and SKGAMES_CRON_SECRET as repository Actions secrets." >&2
-            exit 1
+            echo "Scheduled check skipped: configure SKGAMES_DEPLOYMENT_URL and SKGAMES_CRON_SECRET in Actions secrets."
+            exit 0
           fi
           curl --fail --show-error --silent --retry 2 --max-time 25 \
             --header "Authorization: Bearer $CRON_SECRET" \
