@@ -81,6 +81,13 @@ create policy "hosts and event participants can read games" on public.games
     or (status in ('lobby', 'live') and (test_mode or (facebook_live and live_checked_at > now() - interval '15 minutes')))
   );
 
+-- Unauthenticated visitors may discover ONLY verified, currently live public events.
+create policy "public can discover verified live events" on public.games
+  for select to anon using (
+    status in ('lobby', 'live') and facebook_live
+    and live_checked_at > now() - interval '15 minutes'
+  );
+
 create policy "approved SK officers create draft games" on public.games
   for insert to authenticated with check (
     host_id = (select auth.uid())
@@ -124,7 +131,8 @@ create policy "players can see only their submissions" on public.answers
 -- Lock Data API writes to the exact columns used by the SK editor.
 -- The service key is used server-side ONLY to set facebook_live/verified_video_url.
 revoke all on public.sk_hosts, public.games, public.questions, public.players, public.answers from anon, authenticated;
-grant usage on schema public to authenticated;
+grant usage on schema public to anon, authenticated;
+grant select on public.games to anon;
 grant select on public.sk_hosts, public.games, public.questions, public.players, public.answers to authenticated;
 grant insert (host_id, pin, title, fb_video_url) on public.games to authenticated;
 grant update (title, fb_video_url, status, test_mode) on public.games to authenticated;
