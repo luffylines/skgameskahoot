@@ -79,7 +79,7 @@ Test it using **Actions → Sync SKVASRA Facebook Live status → Run workflow**
 
 ## Step 4 — Host and play
 
-1. SK Officer clicks **SK Officer Login** and signs in using the approved account.
+1. SK Officer opens **/officer** on the deployed website (unlisted staff entry point) and signs in using the approved account. The public homepage does not show the officer login button.
 2. Click **Create new game**, add questions or use the sample SK question set, and open the lobby.
 3. Share the six-digit PIN or **Copy join link**.
 4. Start the Facebook Live, confirm the live gate is open, and click **Start first question**.
@@ -108,3 +108,12 @@ Run the project with **Vercel CLI / vercel dev** and the same environment variab
 Never commit passwords, Meta tokens, Supabase secret keys or your CRON_SECRET. The sample values in **.env.example** are placeholders only.
 
 **Arangkada, Kabataang VASRA!**
+
+
+## Hidden/public access settings
+
+- **Regular visitors:** The SK Officer Login control is hidden from the public website. Off-air visitors see an OFF AIR banner; the game PIN and nickname form is hidden until the official Facebook Live is confirmed. An exact invitation link containing a game PIN can reveal the join form for rehearsals, but the backend still enforces its live/test-mode gate.
+- **Authorized SK Officers:** Sign in at **https://YOUR-DEPLOYED-DOMAIN/officer**. The `/officer` page is deliberately not linked from the public navigation; an authorized account from `sk_hosts` is still required, since a hidden URL is *not* a security mechanism.
+- **GitHub repository privacy:** To hide source code from other people, change repository visibility at GitHub → **Settings** → **General** → **Danger Zone** → **Change repository visibility** → **Make private**. This action is not controlled by the website's UI settings. Confirm Vercel's GitHub permissions still allow it to deploy from a private repository.
+- **Public website visibility:** Hiding buttons does not make the deployed domain itself private. Full website access restriction would require an additional server-side authentication gate.
+
