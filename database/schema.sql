@@ -78,7 +78,7 @@ create policy "hosts and event participants can read games" on public.games
   for select to authenticated using (
     host_id = (select auth.uid())
     or status = 'ended'
-    or (status in ('lobby', 'live') and (facebook_live or test_mode))
+    or (status in ('lobby', 'live') and (test_mode or (facebook_live and live_checked_at > now() - interval '15 minutes')))
   );
 
 create policy "approved SK officers create draft games" on public.games
@@ -111,7 +111,7 @@ create policy "participants and hosts see public rankings" on public.players
     user_id = (select auth.uid()) or exists (
       select 1 from public.games g where g.id = game_id
       and (g.host_id = (select auth.uid()) or g.status = 'ended'
-           or (g.status in ('lobby', 'live') and (g.facebook_live or g.test_mode)))
+           or (g.status in ('lobby', 'live') and (g.test_mode or (g.facebook_live and g.live_checked_at > now() - interval '15 minutes'))))
     )
   );
 
@@ -147,7 +147,7 @@ begin
   select * into v_game from public.games where pin = p_pin;
   if not found then raise exception 'Game PIN not found.'; end if;
   if v_game.status not in ('lobby', 'live') then raise exception 'This event is not open for joining.'; end if;
-  if not (v_game.facebook_live or v_game.test_mode) then
+  if not (v_game.test_mode or (v_game.facebook_live and v_game.live_checked_at > now() - interval '15 minutes')) then
     raise exception 'This game only opens while SK Vasra is live on Facebook.';
   end if;
   insert into public.players (game_id, user_id, nickname)
@@ -178,7 +178,7 @@ begin
   if not found then raise exception 'Game not found.'; end if;
   select id into v_player from public.players where game_id = v_g.id and user_id = v_uid;
   if v_player is null and v_g.host_id <> v_uid then raise exception 'Join the game first.'; end if;
-  v_allowed := (v_g.facebook_live or v_g.test_mode);
+  v_allowed := (v_g.test_mode or (v_g.facebook_live and v_g.live_checked_at > now() - interval '15 minutes'));
   select count(*) into v_count from public.questions where game_id = v_g.id;
   if not v_allowed and v_g.status <> 'ended' then
     return jsonb_build_object('status', 'off_air', 'facebook_live', false, 'test_mode', false,
@@ -220,7 +220,7 @@ begin
   if v_uid is null then raise exception 'Sign in to answer.'; end if;
   if p_choice not between 0 and 3 then raise exception 'Invalid answer.'; end if;
   select * into v_g from public.games where pin = p_pin;
-  if not found or v_g.status <> 'live' or not (v_g.facebook_live or v_g.test_mode)
+  if not found or v_g.status <> 'live' or not (v_g.test_mode or (v_g.facebook_live and v_g.live_checked_at > now() - interval '15 minutes'))
      or v_g.question_ends_at is null or clock_timestamp() >= v_g.question_ends_at then
     raise exception 'This question is closed.';
   end if;
@@ -257,7 +257,7 @@ begin
     raise exception 'SK officer permission required.';
   end if;
   if v_g.status not in ('lobby','live') then raise exception 'Event is not in the lobby or live.'; end if;
-  if not (v_g.facebook_live or v_g.test_mode) then raise exception 'Facebook Live is off. Sync the live stream, or enable rehearsal mode.'; end if;
+  if not (v_g.test_mode or (v_g.facebook_live and v_g.live_checked_at > now() - interval '15 minutes')) then raise exception 'Facebook Live is off. Sync the live stream, or enable rehearsal mode.'; end if;
   v_next := v_g.current_question + 1;
   select * into v_q from public.questions where game_id = p_game_id and position = v_next;
   if not found then
