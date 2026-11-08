@@ -17,6 +17,7 @@ let roundRenderedKey = "";
 let playerFeedback = "";
 let ticking = null;
 let busy = false;
+let lastLiveAt = 0;
 
 function notice(message, error = false) {
   const node = $("hostMessage");
@@ -26,10 +27,15 @@ function notice(message, error = false) {
 function setJoinError(message) { $("joinError").textContent = message || ""; }
 function shortStatus(game) {
   if (game.test_mode) return "REHEARSAL";
-  if (game.facebook_live) return "FB LIVE";
+  if (allowed(game)) return "FB LIVE";
   return "OFF AIR";
 }
-function allowed(game) { return Boolean(game && (game.facebook_live || game.test_mode)); }
+function allowed(game) {
+  if (!game) return false;
+  if (game.test_mode) return true;
+  const timestamp = new Date(game.live_checked_at || 0).getTime();
+  return Boolean(game.facebook_live && timestamp && Date.now() - timestamp < 15 * 60 * 1000);
+}
 function validFacebookURL(value) {
   try {
     const u = new URL(value);
@@ -58,8 +64,10 @@ function showLive(game) {
   $("stagePin").textContent = active ? "GAME PIN  " + game.pin : "Community-first gaming";
   setVideo(active ? (game.verified_video_url || game.fb_video_url) : "");
 }
-async function refreshLive() {
+async function refreshLive(force = false) {
   if (!db) { showLive(null); return; }
+  if (!force && Date.now() - lastLiveAt < 20000) return;
+  lastLiveAt = Date.now();
   const { data, error } = await db.from("games").select("id,pin,title,status,facebook_live,verified_video_url,fb_video_url").eq("facebook_live", true).in("status", ["lobby", "live"]).order("created_at", { ascending: false }).limit(1);
   if (!error) showLive(data && data[0] ? data[0] : null);
 }
@@ -275,16 +283,16 @@ function renderEditor() {
   const g = activeGame;
   const editable = g.status === "draft";
   const current = questions.find((q) => q.position === g.current_question);
-  const state = g.test_mode ? "REHEARSAL / TEST" : g.facebook_live ? "FACEBOOK LIVE VERIFIED" : "WAITING FOR FACEBOOK LIVE";
+  const state = g.test_mode ? "REHEARSAL / TEST" : allowed(g) ? "FACEBOOK LIVE VERIFIED" : "WAITING FOR FACEBOOK LIVE";
   const action = g.status === "draft" ? '<button data-action="lobby" class="btn btn-primary" type="button" ' + (!questions.length ? "disabled" : "") + '>Open lobby →</button>' :
     g.status === "lobby" ? '<button data-action="next" class="btn btn-primary" type="button" ' + (!allowed(g) ? "disabled" : "") + '>Start first question ▶</button>' :
     g.status === "live" ? '<button data-action="next" class="btn btn-primary" type="button" ' + (!allowed(g) ? "disabled" : "") + '>' + (g.current_question >= questions.length ? "Finish event 🏆" : "Next question →") + '</button><button data-action="end" class="btn btn-quiet" type="button">End event</button>' : '<span class="tag">Event completed</span>';
   const qrows = questions.map((q) => '<li><strong>Q' + q.position + '. ' + escapeHTML(q.prompt) + '</strong><small>Correct: ' + escapeHTML(q.options[q.correct_index]) + " · " + q.seconds + " seconds · " + q.points + " points</small></li>").join("");
   $("editorPanel").innerHTML =
-    '<div class="editor-header"><div><div class="section-caption">EVENT CONTROL ROOM</div><h3>' + escapeHTML(g.title) + '</h3><small>Game PIN: <strong style="font-size:18px;color:#142b91;letter-spacing:3px">' + escapeHTML(g.pin) + '</strong></small></div><span class="tag ' + (g.test_mode ? "test" : g.facebook_live ? "live" : "") + '">' + escapeHTML(state) + '</span></div>' +
+    '<div class="editor-header"><div><div class="section-caption">EVENT CONTROL ROOM</div><h3>' + escapeHTML(g.title) + '</h3><small>Game PIN: <strong style="font-size:18px;color:#142b91;letter-spacing:3px">' + escapeHTML(g.pin) + '</strong></small></div><span class="tag ' + (g.test_mode ? "test" : allowed(g) ? "live" : "") + '">' + escapeHTML(state) + '</span></div>' +
     '<div class="status-line"><span class="tag">Status: ' + escapeHTML(g.status.toUpperCase()) + '</span><span class="tag">Round ' + g.current_question + "/" + questions.length + '</span><span class="tag">Question: ' + (current ? escapeHTML(current.prompt.slice(0, 30)) : "Not started") + '</span></div>' +
     '<div class="editor-actions">' + action + (g.status !== "ended" ? '<button data-action="test" class="btn btn-outline" type="button">' + (g.test_mode ? "Disable rehearsal mode" : "Enable rehearsal mode") + '</button>' : "") + '<button data-action="copy" class="btn btn-outline" type="button">Copy join link</button></div>' +
-    '<div class="editor-notice">' + (g.test_mode ? "⚠ REHEARSAL MODE: This allows testing without Facebook Live. It does not mean your Facebook Page is broadcasting." : g.facebook_live ? "● Official Facebook Live confirmed by the server. Players may join the event." : "○ Public gameplay stays locked until the configured official Facebook Page is broadcasting. Use Check Facebook Live to refresh.") + '</div>' +
+    '<div class="editor-notice">' + (g.test_mode ? "⚠ REHEARSAL MODE: This allows testing without Facebook Live. It does not mean your Facebook Page is broadcasting." : allowed(g) ? "● Official Facebook Live confirmed by the server. Players may join the event." : "○ Public gameplay stays locked until the configured official Facebook Page is broadcasting. Use Check Facebook Live to refresh.") + '</div>' +
     '<form id="settingsForm"><h4>Game information</h4><div class="form-two"><label>EVENT TITLE<input name="title" value="' + escapeHTML(g.title) + '" maxlength="90" required></label><label>FACEBOOK VIDEO URL (FALLBACK)<input name="video" value="' + escapeHTML(g.fb_video_url || "") + '" placeholder="https://www.facebook.com/..."></label></div><button class="btn btn-outline" style="margin-top:11px" type="submit">Save game details</button></form>' +
     '<h4>Questions (' + questions.length + ')</h4><ol class="question-list">' + (qrows || "<li>No questions yet. Add your first below!</li>") + "</ol>" +
     (editable ? '<form id="questionForm" class="question-form"><h4>Add a question</h4><label>QUESTION<input name="prompt" maxlength="220" required placeholder="Which barangay are we celebrating today?"></label><div class="options-editor"><label>▲ ANSWER A<input name="a" maxlength="120" required placeholder="Option A"></label><label>◆ ANSWER B<input name="b" maxlength="120" required placeholder="Option B"></label><label>● ANSWER C<input name="c" maxlength="120" required placeholder="Option C"></label><label>■ ANSWER D<input name="d" maxlength="120" required placeholder="Option D"></label></div><div class="form-two"><label>CORRECT ANSWER<select name="correct"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></label><label>TIME LIMIT<select name="seconds"><option value="10">10 seconds</option><option value="15">15 seconds</option><option value="20" selected>20 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option></select></label></div><button class="btn btn-primary" style="margin-top:12px" type="submit">+ Save question</button><button class="btn btn-quiet" id="sampleQuestions" type="button" style="margin-top:12px;margin-left:7px">Add sample SK questions</button></form>' : '<p class="editor-notice">Questions are locked after opening the lobby to keep the competition fair.</p>') +
@@ -372,7 +380,7 @@ async function synchronizeLive() {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Live detection failed");
     notice(result.live ? "Facebook Live confirmed! Community access is now active." : "The official SK Page is currently not live.");
-    await refreshLive();
+    await refreshLive(true);
     await refreshHostGames(activeGame && activeGame.id);
   } catch (error) { notice(error.message, true); }
 }
