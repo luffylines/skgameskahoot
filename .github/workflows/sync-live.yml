@@ -1,0 +1,27 @@
+name: Sync SKVASRA Facebook Live status
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check official Facebook Page live status
+        env:
+          DEPLOYMENT_URL: ${{ secrets.SKGAMES_DEPLOYMENT_URL }}
+          CRON_SECRET: ${{ secrets.SKGAMES_CRON_SECRET }}
+        run: |
+          if [ -z "$DEPLOYMENT_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Set SKGAMES_DEPLOYMENT_URL and SKGAMES_CRON_SECRET as repository Actions secrets." >&2
+            exit 1
+          fi
+          curl --fail --show-error --silent --retry 2 --max-time 25 \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            "${DEPLOYMENT_URL%/}/api/sync-live"
