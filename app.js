@@ -18,6 +18,8 @@ let playerFeedback = "";
 let ticking = null;
 let busy = false;
 let lastLiveAt = 0;
+const officerRoute = location.pathname.replace(/\/$/, "") === "/officer";
+const directGamePin = /^[0-9]{6}$/.test(new URLSearchParams(location.search).get("pin") || "");
 
 function notice(message, error = false) {
   const node = $("hostMessage");
@@ -56,6 +58,8 @@ function setVideo(url) {
 }
 function showLive(game) {
   const active = Boolean(game);
+  $("joinCard").hidden = !active && !directGamePin;
+  $("offlineJoinNote").hidden = active || directGamePin;
   $("liveBadge").className = "live-badge " + (active ? "online" : "offline");
   $("liveBadge").innerHTML = '<span class="status-dot"></span> ' + (active ? "LIVE NOW" : "OFF AIR");
   $("liveTitle").textContent = active ? game.title : "Waiting for the next live event";
@@ -68,8 +72,8 @@ async function refreshLive(force = false) {
   if (!db) { showLive(null); return; }
   if (!force && Date.now() - lastLiveAt < 20000) return;
   lastLiveAt = Date.now();
-  const { data, error } = await db.from("games").select("id,pin,title,status,facebook_live,verified_video_url,fb_video_url").eq("facebook_live", true).in("status", ["lobby", "live"]).order("created_at", { ascending: false }).limit(1);
-  if (!error) showLive(data && data[0] ? data[0] : null);
+  const { data, error } = await db.from("games").select("id,pin,title,status,facebook_live,live_checked_at,verified_video_url,fb_video_url").eq("facebook_live", true).in("status", ["lobby", "live"]).order("created_at", { ascending: false }).limit(1);
+  if (!error) showLive(data && data[0] && allowed(data[0]) ? data[0] : null);
 }
 function startTimer() {
   if (ticking) window.clearInterval(ticking);
@@ -205,7 +209,7 @@ async function checkHost() {
   if (!account || account.is_anonymous) return false;
   const { data, error } = await db.from("sk_hosts").select("user_id").eq("user_id", account.id).maybeSingle();
   isHost = !error && Boolean(data);
-  if (isHost) { $("hostSection").hidden = false; $("hostOpen").textContent = "SK Game Studio"; await refreshHostGames(); }
+  if (isHost) { $("hostSection").hidden = !officerRoute; $("hostOpen").textContent = "SK Game Studio"; if (officerRoute) await refreshHostGames(); }
   return isHost;
 }
 async function loginHost(event) {
@@ -397,6 +401,7 @@ async function boot() {
     $("themeToggle").setAttribute("aria-pressed", String(dark));
     localStorage.setItem("skvasra_live_theme", dark ? "dark" : "light");
   });
+  if (officerRoute) $("hostOpen").hidden = false;
   $("hostOpen").addEventListener("click", async () => {
     if (isHost) $("hostSection").scrollIntoView({ behavior: "smooth" });
     else $("hostDialog").showModal();
@@ -416,6 +421,7 @@ async function boot() {
     if (!config.supabaseUrl || !config.supabaseKey) throw new Error("Supabase URL and publishable key not set.");
     db = createClient(config.supabaseUrl, config.supabaseKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
     await checkHost();
+    if (officerRoute && !isHost && !$("hostDialog").open) $("hostDialog").showModal();
     await refreshLive();
     const saved = localStorage.getItem("skvasra_live_player");
     if (saved && !isHost) {
